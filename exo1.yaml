@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: API Ping
+  version: "1.0.0"
+  description: Une API avec une seule route de ping.
+paths:
+  /ping:
+    get:
+      summary: Vérifie si le serveur répond
+      responses:
+        '200':
+          description: Réponse réussie
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong

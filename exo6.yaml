@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  title: API Gestion des utilisateurs
+  version: "1.0.0"
+  description: >
+    API permettant de créer, lister et modifier des profils d’utilisateurs
+    en respectant les bonnes pratiques de conception (PUT ciblés, décomposition des modèles).
+
+tags:
+  - name: Users
+    description: Gestion des profils utilisateurs
+
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: Liste des utilisateurs
+      responses:
+        '200':
+          description: Liste des profils utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+              examples:
+                multipleUsers:
+                  summary: Plusieurs utilisateurs
+                  value:
+                    - identifier: "u123"
+                      first_name: "Alice"
+                      last_name: "Rabe"
+                      birthdate: "1995-03-21"
+                      email: "alice@example.com"
+                      address_street: "12 Rue Principale"
+                      address_city: "Antananarivo"
+                      address_country: "MG"
+                      address_postal_code: "101"
+                      needs_newsletter: true
+                      language: "fr"
+                    - identifier: "u124"
+                      first_name: "Bob"
+                      last_name: "Rakoto"
+                      birthdate: "1990-07-15"
+                      email: "bob@example.com"
+                      address_street: "45 Avenue Liberté"
+                      address_city: "Paris"
+                      address_country: "FR"
+                      address_postal_code: "75001"
+                      needs_newsletter: false
+                      language: "eng"
+
+    post:
+      tags: [Users]
+      summary: Crée un nouvel utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserProfile'
+            examples:
+              createUser:
+                summary: Exemple de création
+                value:
+                  first_name: "Charlie"
+                  last_name: "Randria"
+                  birthdate: "2000-12-01"
+                  email: "charlie@example.com"
+                  address_street: "123 Rue Verte"
+                  address_city: "Tamatave"
+                  address_country: "MG"
+                  address_postal_code: "501"
+                  needs_newsletter: true
+                  language: "mg"
+      responses:
+        '201':
+          description: Utilisateur créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              examples:
+                createdUser:
+                  summary: Utilisateur créé avec identifiant
+                  value:
+                    identifier: "u125"
+                    first_name: "Charlie"
+                    last_name: "Randria"
+                    birthdate: "2000-12-01"
+                    email: "charlie@example.com"
+                    address_street: "123 Rue Verte"
+                    address_city: "Tamatave"
+                    address_country: "MG"
+                    address_postal_code: "501"
+                    needs_newsletter: true
+                    language: "mg"
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Récupère un utilisateur par identifiant
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Profil trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: Utilisateur introuvable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User not found"
+
+  /users/{id}/email:
+    put:
+      tags: [Users]
+      summary: Met à jour l’email d’un utilisateur
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+              required: [email]
+              example:
+                email: "newalice@example.com"
+      responses:
+        '200':
+          description: Email mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /users/{id}/address:
+    put:
+      tags: [Users]
+      summary: Met à jour l’adresse complète d’un utilisateur
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAddress'
+            example:
+              address_street: "78 Rue Soleil"
+              address_city: "Majunga"
+              address_country: "MG"
+              address_postal_code: "401"
+      responses:
+        '200':
+          description: Adresse mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+components:
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: Identifiant unique de l’utilisateur
+      schema:
+        type: string
+        example: "u123"
+
+  schemas:
+    BaseUserProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        birthdate:
+          type: string
+          format: date
+        email:
+          type: string
+          format: email
+        needs_newsletter:
+          type: boolean
+        language:
+          type: string
+          enum: [mg, fr, eng]
+
+    UserAddress:
+      type: object
+      properties:
+        address_street:
+          type: string
+        address_city:
+          type: string
+        address_country:
+          type: string
+        address_postal_code:
+          type: string
+
+    CreateUserProfile:
+      allOf:
+        - $ref: '#/components/schemas/BaseUserProfile'
+        - $ref: '#/components/schemas/UserAddress'
+      description: Profil d’utilisateur lors de la création (sans identifiant)
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/CreateUserProfile'
+        - type: object
+          properties:
+            identifier:
+              type: string
+              description: Identifiant unique généré par le serveur
